@@ -6,6 +6,9 @@
 #include <libcdvd-common.h>
 #include <stdlib.h> 
 
+//TODO: Figure out how to determine total number of sectors present.
+//TODO: Add human input
+
 void reset_status_line() {
   scr_setXY(4,6);
   scr_printf("                                               ");
@@ -56,11 +59,11 @@ void perform_scan() {
     scr_setXY(4,7);
     sceCdSync(0);
     lastError = sceCdGetError();
-    scr_printf("%d Sample: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", cmdok, sector_data[0], sector_data[1], sector_data[2], sector_data[3],
+    scr_printf("%s Sample: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", cmdok == 1 ? "CMD:OK  " : "CMD:FAIL", sector_data[0], sector_data[1], sector_data[2], sector_data[3],
       sector_data[4], sector_data[5], sector_data[6], sector_data[7], sector_data[8], sector_data[9]);
     scr_setXY(4,8);
     currentLsn += num_sectors;
-    scr_printf("Last Error: %02d", lastError);
+    scr_printf("Last Error: %02X", lastError);
     scr_setXY(4,9);
     if ( lastError == SCECdErREAD ) {
       readErrors++;
