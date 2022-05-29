@@ -6,18 +6,16 @@
 #include <libcdvd-common.h>
 #include <stdlib.h> 
 
-int steps_remain = 30;
-int total_steps = 0;
-extern u32 initMode;
-
-bool in_progress() {
-  return total_steps < 30;
-}
-
 void reset_status_line() {
   scr_setXY(4,6);
   scr_printf("                                               ");
   scr_setXY(4,6);
+}
+
+bool is_end_of_media(int errorCode) {
+  //Exit if we give a bad lsn address or get the EOM response.
+  //either should mean we've reached end of disc.
+  return ( errorCode == SCECdErIPI || errorCode == SCECdErEOM );
 }
 
 void perform_scan() {
@@ -45,9 +43,12 @@ void perform_scan() {
       scr_printf("TOC Retrieval Failed");
       return;
   }
+  //Init read mode properly
+  mode.trycount = 0;
   mode.spindlctrl = SCECdSpinNom;
+  mode.datapattern = SCECdSecS2048;
   u32 currentLsn = 0;
-  while ( lastError != 32 ) {
+  while ( !is_end_of_media(lastError) ) {
     scr_setXY(4,11);
     scr_printf("Sector: %d", currentLsn);
     sceCdDiskReady(0);
@@ -55,15 +56,15 @@ void perform_scan() {
     scr_setXY(4,7);
     sceCdSync(0);
     lastError = sceCdGetError();
-    scr_printf("%d Sample: %02X %02X %02X %02X %02X %02X %02X %02X", cmdok, sector_data[0], sector_data[1], sector_data[2], sector_data[3],
-      sector_data[4], sector_data[5], sector_data[6], sector_data[7]);
+    scr_printf("%d Sample: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", cmdok, sector_data[0], sector_data[1], sector_data[2], sector_data[3],
+      sector_data[4], sector_data[5], sector_data[6], sector_data[7], sector_data[8], sector_data[9]);
     scr_setXY(4,8);
     currentLsn += num_sectors;
     scr_printf("Last Error: %02d", lastError);
     scr_setXY(4,9);
     if ( lastError == SCECdErREAD ) {
       readErrors++;
-    } else if ( lastError != SCECdErNO && lastError != 32 ) {
+    } else if ( lastError != SCECdErNO && !is_end_of_media(lastError) ) {
       otherErrors++;
     }
     scr_printf("Read Errors: %d", readErrors);
@@ -73,19 +74,9 @@ void perform_scan() {
   }
   scr_setXY(4,8);
   scr_printf("Last Error: END OF MEDIA");
-
-
-  //Actually do scan here.
-  //Figure out size of disc.
-  //Read disc in loop
-  //Capture and report non-recoverable errors
-  //Error codes: https://ps2dev.github.io/ps2sdk/libcdvd-common_8h.html#acc94c03027ecdedf87578dbedc2bf350
-  //Get errors: sceCdGetError
-  //Sector stream Read: sceCdStRead
-  //Sector stream init: sceCdStInit
 }
 
-int main()         //int main() is automatically called/started with all programs
+int main()
 {
   enum SCECdvdInitMode mode;
   int disktype;
@@ -93,9 +84,9 @@ int main()         //int main() is automatically called/started with all program
   int supported = true;
   mode = SCECdINIT;
   init_scr();         //Initialize Screen
-  sleep(1);                       //PS2 is old. Give it a second...
+  sleep(1);
   scr_setCursor(0);
-  scr_setbgcolor(0x90993333);
+  scr_setbgcolor(0x00993333);
   scr_clear();
   scr_setXY(1,1);
   scr_printf("Native Hardware Disc Scan");
@@ -135,6 +126,6 @@ int main()         //int main() is automatically called/started with all program
 
   scr_setXY(4,12);
   scr_printf("Done! Sleeping for 2 hours. Restart console when ready.\n"); //print our string
-  sleep(7200);         //Wait here for 30 seconds instead of exiting (ret 0) with sleep();
+  sleep(7200);
   return 0;         //This exits and returns to system menu
 }
