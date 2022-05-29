@@ -103,16 +103,13 @@ int main()
     case SCECdPSCD:
     case SCECdPSCDDA:
       message = "Media Type: PlayStation CD";
-      //sceCdMmode(disktype);
       break;
     case SCECdPS2CD:
     case SCECdPS2CDDA:
       message = "Media Type: PlayStation2 CD";
-      //sceCdMmode(disktype);
       break;
     case SCECdPS2DVD:
       message = "Media Type: PlayStation2 DVD";
-      //sceCdMmode(disktype);
       break;
     default:
       message = "Media Type: Non-supported disc or no disc!";
